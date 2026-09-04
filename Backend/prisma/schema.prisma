@@ -1,0 +1,49 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Model User & Profil Gamifikasi
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  username  String   @unique
+  name      String
+  password  String
+  avatarUrl String?
+
+  // Elemen Gamifikasi (Heart / Nyawa, XP, Streak)
+  hearts    Int      @default(5)     // Max 5 hati
+  xp        Int      @default(0)     // Experience point
+  gems      Int      @default(0)     // Mata uang in-app
+  streak    Int      @default(0)     // Hari berturut-turut belajar
+  lastActive DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  progress  UserProgress[]
+}
+
+// Model Progres Belajar per Materi/Huruf/Ayat
+model UserProgress {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId    String   // ID modul/pelajaran (misal: "hijaiyah-1", "tajwid-ikhfa")
+  isCompleted Boolean  @default(false)
+  score       Int      @default(0)
+  completedAt DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, lessonId])
+}

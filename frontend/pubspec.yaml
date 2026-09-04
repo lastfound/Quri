@@ -1,0 +1,51 @@
+name: frontend
+description: "Platform Gamifikasi Belajar Al-Qur'an (Quri)"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Icons
+  cupertino_icons: ^1.0.8
+
+  # State Management Modern
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # Routing & Navigation
+  go_router: ^13.2.0
+
+  # Networking (Backend NestJS Client)
+  dio: ^5.4.0
+
+  # Audio Player (PENTING: Memutar Suara Ayat/Huruf & Sound Effects Kuis)
+  just_audio: ^0.9.36
+
+  # UI, Fonts & Animation
+  google_fonts: ^6.1.0        # Untuk font Arab seperti 'Amiri' atau 'Scheherazade New'
+  lottie: ^3.1.0              # Animasi gamifikasi (seperti di Duolingo)
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+  # Code Generation untuk Riverpod
+  build_runner: ^2.4.8
+  riverpod_generator: ^2.4.0
+
+flutter:
+  uses-material-design: true
+
+  # Folder tempat simpan file audio kuis, efek suara, & gambar
+  assets:
+    - assets/audio/
+    - assets/images/
+    - assets/animations/
