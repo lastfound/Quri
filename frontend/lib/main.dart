@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/core/theme/app_colors.dart';
-import 'package:frontend/features/home/presentation/home_screen.dart';
+import 'package:frontend/features/welcome/presentation/welcome_screen.dart';
 
 void main() {
   runApp(
@@ -28,7 +28,7 @@ class QuriApp extends StatelessWidget {
         ),
         fontFamily: 'sans-serif',
       ),
-      home: const HomeScreen(),
+      home: const WelcomeScreen(),
     );
   }
 }

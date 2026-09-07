@@ -4,17 +4,26 @@ import 'package:frontend/core/theme/app_colors.dart';
 class GamificationHeader extends StatelessWidget implements PreferredSizeWidget {
   final int streak;
   final int gems;
+  final int? energy;
+  final int? energyMax;
   final int hearts;
+  final int? heartsMax;
 
   const GamificationHeader({
     super.key,
     this.streak = 3,
     this.gems = 150,
+    this.energy,
+    this.energyMax,
     this.hearts = 5,
+    this.heartsMax,
   });
 
+  int get currentEnergy => energy ?? hearts;
+  int? get maxEnergy => energyMax ?? heartsMax;
+
   @override
-  Size get preferredSize => const Size.fromHeight(65);
+  Size get preferredSize => const Size.fromHeight(68);
 
   @override
   Widget build(BuildContext context) {
@@ -25,10 +34,10 @@ class GamificationHeader extends StatelessWidget implements PreferredSizeWidget 
         right: 16,
         bottom: 10,
       ),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
+      decoration: const BoxDecoration(
+        color: Colors.white,
         border: Border(
-          bottom: BorderSide(color: AppColors.border, width: 1.5),
+          bottom: BorderSide(color: AppColors.outlineDark, width: 2),
         ),
       ),
       child: Row(
@@ -40,12 +49,14 @@ class GamificationHeader extends StatelessWidget implements PreferredSizeWidget 
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(10),
+                  color: AppColors.cream,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.outlineDark, width: 2),
+                  boxShadow: AppColors.solidShadow(offset: 2),
                 ),
                 child: const Icon(
                   Icons.auto_stories,
-                  color: AppColors.primary,
+                  color: AppColors.teal,
                   size: 20,
                 ),
               ),
@@ -53,9 +64,9 @@ class GamificationHeader extends StatelessWidget implements PreferredSizeWidget 
               const Text(
                 'Quri',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 22,
                   fontWeight: FontWeight.w900,
-                  color: AppColors.primary,
+                  color: AppColors.teal,
                   letterSpacing: -0.5,
                 ),
               ),
@@ -81,11 +92,11 @@ class GamificationHeader extends StatelessWidget implements PreferredSizeWidget 
               ),
               const SizedBox(width: 8),
 
-              // ❤️ Hearts
+              // ⚡ Energi (Petir)
               _StatBadge(
-                icon: Icons.favorite_rounded,
-                iconColor: AppColors.heartRed,
-                value: '$hearts',
+                icon: Icons.bolt_rounded,
+                iconColor: AppColors.energyYellow,
+                value: maxEnergy != null ? '$currentEnergy/$maxEnergy' : '$currentEnergy',
               ),
             ],
           ),
@@ -111,9 +122,10 @@ class _StatBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.outlineDark, width: 1.5),
+        boxShadow: AppColors.solidShadow(offset: 2),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -124,8 +136,8 @@ class _StatBadge extends StatelessWidget {
             value,
             style: const TextStyle(
               fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w800,
+              color: AppColors.outlineDark,
             ),
           ),
         ],
