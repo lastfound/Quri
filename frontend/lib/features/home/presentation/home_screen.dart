@@ -154,7 +154,8 @@ class _HomeScreenState extends State<HomeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.stars_rounded, color: AppColors.starGold, size: 22),
+                  const Icon(Icons.stars_rounded,
+                      color: AppColors.starGold, size: 22),
                   const SizedBox(width: 6),
                   Text(
                     '+${lesson['xp']} XP Hadiah',
@@ -184,7 +185,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
-                      side: const BorderSide(color: AppColors.outlineDark, width: 2),
+                      side: const BorderSide(
+                          color: AppColors.outlineDark, width: 2),
                     ),
                   ),
                   child: const Text(
@@ -261,8 +263,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    border:
-                        Border.all(color: AppColors.outlineDark, width: 2),
+                    border: Border.all(color: AppColors.outlineDark, width: 2),
                     boxShadow: AppColors.solidShadow(offset: 2),
                   ),
                   child: Row(
@@ -321,7 +322,8 @@ class _HomeScreenState extends State<HomeScreen> {
           indicatorColor: AppColors.tealLight.withValues(alpha: 0.2),
           destinations: const [
             NavigationDestination(
-              icon: Icon(Icons.auto_stories_outlined, color: AppColors.grayMedium),
+              icon: Icon(Icons.auto_stories_outlined,
+                  color: AppColors.grayMedium),
               selectedIcon: Icon(Icons.auto_stories, color: AppColors.teal),
               label: 'Belajar',
             ),
@@ -336,7 +338,8 @@ class _HomeScreenState extends State<HomeScreen> {
               label: 'Ranks',
             ),
             NavigationDestination(
-              icon: Icon(Icons.storefront_outlined, color: AppColors.grayMedium),
+              icon:
+                  Icon(Icons.storefront_outlined, color: AppColors.grayMedium),
               selectedIcon: Icon(Icons.storefront, color: AppColors.teal),
               label: 'Shop',
             ),

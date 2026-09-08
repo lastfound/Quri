@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/core/theme/app_colors.dart';
-import 'package:frontend/features/home/presentation/home_screen.dart';
+import 'package:frontend/features/welcome/presentation/welcome_start_screen.dart';
 
-/// Halaman Welcome / landing pertama saat user buka aplikasi Quri.
-///
-/// Semua komponen (bubble sapaan, maskot, tombol, badge, background titik)
-/// digabung jadi satu file ini biar simpel dan gampang di-copy.
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -126,7 +122,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const HomeScreen(),
+                            builder: (_) => const WelcomeStartScreen(),
                           ),
                         );
                       },

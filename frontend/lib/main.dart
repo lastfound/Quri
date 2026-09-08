@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend/core/navigation/page_transitions.dart';
 import 'package:frontend/core/theme/app_colors.dart';
 import 'package:frontend/features/welcome/presentation/welcome_screen.dart';
 
@@ -25,6 +26,15 @@ class QuriApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primary,
           primary: AppColors.primary,
+        ),
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: SmoothPageTransitionsBuilder(),
+            TargetPlatform.iOS: SmoothPageTransitionsBuilder(),
+            TargetPlatform.windows: SmoothPageTransitionsBuilder(),
+            TargetPlatform.macOS: SmoothPageTransitionsBuilder(),
+            TargetPlatform.linux: SmoothPageTransitionsBuilder(),
+          },
         ),
         fontFamily: 'sans-serif',
       ),

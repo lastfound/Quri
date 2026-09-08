@@ -20,6 +20,7 @@ class AppColors {
   // Tertiary
   static const Color tertiary = Color(0xFF755B00);
   static const Color tertiaryContainer = Color(0xFFCEA72C);
+  static const Color onTertiaryContainer = Color(0xFF4F3D00);
 
   // Surface & Background
   static const Color background = Color(0xFFF8FAFC);
@@ -100,4 +101,18 @@ class AppColors {
           blurRadius: 0,
         ),
       ];
+
+  // =====================================================================
+  // ===== "Placement Test" design (halaman soal tes penempatan) =====
+  // =====================================================================
+
+  /// Border/outline hijau tua khas layar tes (beda tipis dari outlineDark).
+  static const Color placementBorder = Color(0xFF0F382C);
+
+  /// Hijau tua untuk opsi terpilih & tombol CTA "Lanjut".
+  static const Color placementActive = Color(0xFF135241);
+
+  static const Color placementMascotBg = Color(0xFFD7EFE6);
+  static const Color placementOptionIconBg = Color(0xFFE5F5EE);
+  static const Color placementPremiumIconBg = Color(0xFFFEF3D6);
 }
