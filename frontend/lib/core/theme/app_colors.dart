@@ -115,4 +115,23 @@ class AppColors {
   static const Color placementMascotBg = Color(0xFFD7EFE6);
   static const Color placementOptionIconBg = Color(0xFFE5F5EE);
   static const Color placementPremiumIconBg = Color(0xFFFEF3D6);
+
+  // =====================================================================
+  // ===== "Exercise / Quiz" design (halaman soal latihan per level) =====
+  // =====================================================================
+
+  /// Background kartu soal (abu sangat terang).
+  static const Color quizCardBg = Color(0xFFF9FAFB);
+
+  /// Border kartu soal & opsi jawaban (abu-hijau lembut).
+  static const Color quizCardBorder = Color(0xFFD5DDD9);
+
+  /// Shadow solid opsi terpilih (gelap, kontras).
+  static const Color quizOptionSelectedShadow = Color(0xFF0E5246);
+
+  /// Border radio button opsi belum dipilih.
+  static const Color quizRadioBorder = Color(0xFFB0BDB7);
+
+  /// Shadow solid tombol CTA "Periksa Jawaban".
+  static const Color quizCtaShadow = Color(0xFF0E5246);
 }

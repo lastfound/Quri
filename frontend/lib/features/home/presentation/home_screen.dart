@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/core/theme/app_colors.dart';
 import 'package:frontend/core/theme/unit_theme.dart';
+import 'package:frontend/features/exercise/data/unit_1_curriculum.dart';
+import 'package:frontend/features/exercise/presentation/exercise_question_screen.dart';
 import 'widgets/gamification_header.dart';
 import 'widgets/learning_node.dart';
 
@@ -22,6 +24,12 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentNavIndex = 0;
+
+  /// Track level terakhir yang sudah di-unlock (0-indexed).
+  int _unlockedUpTo = 0;
+
+  /// Track stars per level (0 = belum selesai, 1-3 = sesuai performa).
+  late List<int> _starsByLevel;
 
   String _getUnitTitle(int unit) {
     switch (unit) {
@@ -60,111 +68,64 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _configureLessonsForUnit();
+    _starsByLevel = List<int>.filled(Unit1Curriculum.levels.length, 0);
   }
 
-  void _configureLessonsForUnit() {
-    // Setiap unit mulai dari awal: pelajaran 1 (index 0) aktif, sisanya terkunci
-    for (int i = 0; i < _lessons.length; i++) {
-      if (i == 0) {
-        _lessons[i]['status'] = NodeStatus.active;
-        _lessons[i]['stars'] = 0;
+  /// Membangun data lessons dari kurikulum + status unlock.
+  List<Map<String, dynamic>> _buildLessons() {
+    final levels = Unit1Curriculum.levels;
+    final List<Map<String, dynamic>> lessons = [];
+
+    // Pola zigzag offset untuk variasi visual
+    final offsets = [0.0, -100.0, 0.0, 100.0, 0.0, -100.0, 0.0, 100.0, 0.0, -100.0, 0.0, 100.0, 0.0];
+
+    for (int i = 0; i < levels.length; i++) {
+      final level = levels[i];
+      NodeStatus status;
+      if (i < _unlockedUpTo) {
+        status = NodeStatus.completed;
+      } else if (i == _unlockedUpTo) {
+        status = NodeStatus.active;
       } else {
-        _lessons[i]['status'] = NodeStatus.locked;
-        _lessons[i]['stars'] = 0;
+        status = NodeStatus.locked;
       }
-    }
-  }
 
-  // Data Jalur Belajar Dummy (Akan diganti dari Backend nanti)
-  final List<Map<String, dynamic>> _lessons = [
-    {
-      'title': 'Huruf Tenggorokan',
-      'arabic': 'ء - هـ',
-      'status': NodeStatus.active,
-      'variant': NodeVariant.normal,
-      'offset': 0.0,
-      'description': 'Mengenal makhraj huruf Al-Halq (tenggorokan terdalam)',
-      'xp': 15,
-      'stars': 0,
-    },
-    {
-      'title': 'Huruf Alif & Ba',
-      'arabic': 'ا - ب',
-      'status': NodeStatus.locked,
-      'variant': NodeVariant.normal,
-      'offset': -120.0,
-      'description': 'Makhraj huruf bibir & rongga mulut',
-      'xp': 15,
-      'stars': 0,
-    },
-    {
-      'title': 'Pemahaman Makna & Tadabbur',
-      'arabic': 'تدبر',
-      'status': NodeStatus.locked,
-      'variant': NodeVariant.premium,
-      'offset': 0.0,
-      'description': 'Side quest premium: memahami makna & tadabbur ayat',
-      'xp': 30,
-      'stars': 0,
-      'badgeLabel': 'PREMIUM',
-      'sideNoteText': 'Side Quest: Pemahaman Makna & Tadabbur',
-      'sideNoteAlign': SideNoteAlign.left,
-    },
-    {
-      'title': 'Huruf Ta & Tsa',
-      'arabic': 'ت - ث',
-      'status': NodeStatus.locked,
-      'variant': NodeVariant.normal,
-      'offset': 120.0,
-      'description': 'Makhraj ujung lidah bertemu gigi seri',
-      'xp': 20,
-      'stars': 0,
-    },
-    {
-      'title': 'Huruf Jim & Kha',
-      'arabic': 'ج - ح',
-      'status': NodeStatus.locked,
-      'variant': NodeVariant.normal,
-      'offset': 0.0,
-      'description': 'Tengah lidah & tengah tenggorokan',
-      'xp': 20,
-      'stars': 0,
-    },
-    {
-      'title': 'Modul Spesial: AI Makhraj Pro',
-      'arabic': 'AI Pro',
-      'status': NodeStatus.locked,
-      'variant': NodeVariant.premium,
-      'offset': -120.0,
-      'description': 'Latihan makhraj dengan koreksi suara berbasis AI',
-      'xp': 40,
-      'badgeLabel': 'BONUS',
-      'sideNoteText': 'Modul Spesial: AI Makhraj Pro',
-      'sideNoteAlign': SideNoteAlign.right,
-    },
-    {
-      'title': 'Harakat Fathah',
-      'arabic': 'َـ',
-      'status': NodeStatus.locked,
-      'variant': NodeVariant.normal,
-      'offset': 0.0,
-      'description': 'Tanda baca vokal terbuka (A)',
-      'xp': 25,
-    },
-    {
-      'title': 'Peti Harta Karun',
-      'arabic': '🎁',
-      'status': NodeStatus.locked,
-      'variant': NodeVariant.treasure,
-      'offset': 120.0,
-      'description': 'Buka setelah menyelesaikan Unit 1',
-      'xp': 50,
-    },
-  ];
+      // Tentukan variant berdasarkan badge
+      NodeVariant variant = NodeVariant.normal;
+      if (level.badgeLabel != null) {
+        if (level.badgeLabel == 'BOSS LEVEL') {
+          variant = NodeVariant.treasure;
+        } else {
+          variant = NodeVariant.premium;
+        }
+      }
+
+      lessons.add({
+        'levelIndex': i,
+        'title': level.title,
+        'arabic': level.arabicSubtitle,
+        'status': status,
+        'variant': variant,
+        'offset': offsets[i % offsets.length],
+        'description': level.description,
+        'xp': level.xpReward,
+        'stars': _starsByLevel[i],
+        'badgeLabel': level.badgeLabel,
+        if (level.badgeLabel != null) ...{
+          'sideNoteText': level.title,
+          'sideNoteAlign':
+              i.isEven ? SideNoteAlign.left : SideNoteAlign.right,
+        },
+      });
+    }
+
+    return lessons;
+  }
 
   void _showLessonDialog(
       BuildContext context, Map<String, dynamic> lesson, UnitTheme unitTheme) {
+    final isLocked = lesson['status'] == NodeStatus.locked;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -173,7 +134,8 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(28)),
             border: const Border(
               top: BorderSide(color: AppColors.outlineDark, width: 2),
             ),
@@ -192,15 +154,19 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 18),
               Text(
                 lesson['arabic'],
+                textDirection: TextDirection.rtl,
                 style: TextStyle(
                   fontSize: 48,
                   fontWeight: FontWeight.bold,
-                  color: unitTheme.primary,
+                  color: isLocked
+                      ? AppColors.lockedGrayBorder
+                      : unitTheme.primary,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 lesson['title'],
+                textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -232,35 +198,64 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
+              if (isLocked) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.lockedGray,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.lock_rounded,
+                          size: 16, color: AppColors.lockedGrayBorder),
+                      SizedBox(width: 6),
+                      Text(
+                        'Selesaikan level sebelumnya untuk membuka',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.lockedGrayBorder,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Memulai latihan: ${lesson['title']}!'),
-                        backgroundColor: unitTheme.primary,
-                      ),
-                    );
-                  },
+                  onPressed: isLocked
+                      ? null
+                      : () {
+                          Navigator.pop(ctx);
+                          _navigateToExercise(lesson);
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: unitTheme.primary,
+                    disabledBackgroundColor: AppColors.lockedGray,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
-                      side: const BorderSide(
-                          color: AppColors.outlineDark, width: 2),
+                      side: BorderSide(
+                        color: isLocked
+                            ? AppColors.lockedGrayBorder
+                            : AppColors.outlineDark,
+                        width: 2,
+                      ),
                     ),
                   ),
-                  child: const Text(
-                    'MULAI BELAJAR',
+                  child: Text(
+                    isLocked ? '🔒 TERKUNCI' : 'MULAI BELAJAR',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w900,
-                      color: Colors.white,
+                      color: isLocked ? AppColors.lockedGrayBorder : Colors.white,
                       letterSpacing: 1,
                     ),
                   ),
@@ -274,9 +269,61 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Navigasi ke ExerciseQuestionScreen dengan data soal dari kurikulum.
+  void _navigateToExercise(Map<String, dynamic> lesson) {
+    final int levelIndex = lesson['levelIndex'];
+    final level = Unit1Curriculum.levels[levelIndex];
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ExerciseQuestionScreen(
+          questions: level.questions,
+          levelTitle: level.title,
+          unitNumber: widget.startingUnit,
+          xpReward: level.xpReward,
+          streak: widget.startingUnit > 1 ? 3 : 0,
+          gems: widget.startingUnit > 1 ? 150 : 50,
+          onCompleted: (correctCount, totalCount) {
+            // Hitung bintang berdasarkan persentase benar
+            final percent = correctCount / totalCount * 100;
+            int stars = 1;
+            if (percent >= 90) {
+              stars = 3;
+            } else if (percent >= 80) {
+              stars = 2;
+            }
+
+            setState(() {
+              _starsByLevel[levelIndex] = stars;
+              // Unlock level berikutnya jika belum
+              if (levelIndex >= _unlockedUpTo &&
+                  levelIndex + 1 < Unit1Curriculum.levels.length) {
+                _unlockedUpTo = levelIndex + 1;
+              }
+            });
+
+            // Tampilkan snackbar selamat
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    '🎉 ${level.title} selesai! +${level.xpReward} XP ($stars⭐)',
+                  ),
+                  backgroundColor:
+                      UnitTheme.getTheme(widget.startingUnit).primary,
+                ),
+              );
+            }
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final unitTheme = UnitTheme.getTheme(widget.startingUnit);
+    final lessons = _buildLessons();
 
     return Scaffold(
       backgroundColor: AppColors.cream,
@@ -333,7 +380,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.outlineDark, width: 2),
+                    border:
+                        Border.all(color: AppColors.outlineDark, width: 2),
                     boxShadow: AppColors.solidShadow(offset: 2),
                   ),
                   child: Row(
@@ -357,8 +405,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 32),
 
-          // Peta Belajar (Daftar Node)
-          ..._lessons.map((lesson) {
+          // Peta Belajar (Daftar Node dari Kurikulum)
+          ...lessons.map((lesson) {
             return LearningNode(
               title: lesson['title'],
               arabicSubtitle: lesson['arabic'],
