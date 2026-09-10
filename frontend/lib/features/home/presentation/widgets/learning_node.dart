@@ -17,6 +17,8 @@ class LearningNode extends StatelessWidget {
   final String? badgeLabel;
   final String? sideNoteText;
   final SideNoteAlign sideNoteAlign;
+  final Color? activeColor;
+  final Color? accentColor;
   final VoidCallback onTap;
 
   const LearningNode({
@@ -30,6 +32,8 @@ class LearningNode extends StatelessWidget {
     this.badgeLabel,
     this.sideNoteText,
     this.sideNoteAlign = SideNoteAlign.left,
+    this.activeColor,
+    this.accentColor,
     required this.onTap,
   });
 
@@ -55,7 +59,7 @@ class LearningNode extends StatelessWidget {
           baseColor = AppColors.goldPremium;
           iconWidget = const Icon(Icons.auto_awesome_rounded, size: 36, color: Colors.white);
         } else {
-          baseColor = AppColors.teal;
+          baseColor = activeColor ?? AppColors.teal;
           iconWidget = const Icon(Icons.play_arrow_rounded, size: 40, color: Colors.white);
         }
         break;
@@ -91,7 +95,9 @@ class LearningNode extends StatelessWidget {
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
                     decoration: BoxDecoration(
-                      color: variant == NodeVariant.premium ? AppColors.goldDark : AppColors.teal,
+                      color: variant == NodeVariant.premium
+                          ? AppColors.goldDark
+                          : (activeColor ?? AppColors.teal),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: AppColors.outlineDark, width: 2),
                       boxShadow: AppColors.solidShadow(offset: 3),
@@ -136,7 +142,7 @@ class LearningNode extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: badgeLabel == 'PREMIUM'
                                   ? AppColors.gold
-                                  : AppColors.mint,
+                                  : (accentColor ?? AppColors.mint),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(color: AppColors.outlineDark, width: 1.5),
                               boxShadow: AppColors.solidShadow(offset: 2),
