@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:frontend/core/theme/app_colors.dart';
 import 'package:frontend/core/theme/unit_theme.dart';
@@ -28,6 +30,7 @@ class ExerciseQuestionScreen extends StatefulWidget {
   final int energyMax;
 
   final VoidCallback? onClose;
+  final ValueChanged<int>? onEnergyChanged;
 
   /// Dipanggil saat seluruh soal selesai, membawa jumlah jawaban benar.
   final void Function(int correctCount, int totalCount)? onCompleted;
@@ -43,6 +46,7 @@ class ExerciseQuestionScreen extends StatefulWidget {
     this.energy = 20,
     this.energyMax = 20,
     this.onClose,
+    this.onEnergyChanged,
     this.onCompleted,
   });
 
@@ -53,46 +57,148 @@ class ExerciseQuestionScreen extends StatefulWidget {
 
 class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
   late final PageController _pageController;
+  late final List<ExerciseQuestion> _shuffledQuestions;
   late final List<int?> _selectedAnswers;
+  late int _currentEnergy;
   int _currentStep = 0;
   double _prevProgress = 0.0;
   int _correctCount = 0;
 
   /// Status feedback per soal: null = belum dijawab, true = benar, false = salah.
   bool? _currentFeedback;
+  bool _isProcessingAnswer = false;
+  Timer? _autoAdvanceTimer;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
-    _selectedAnswers = List<int?>.filled(widget.questions.length, null);
+    _currentEnergy = widget.energy;
+
+    // Acak posisi pilihan ganda agar jawaban benar tidak selalu di opsi pertama (A)
+    final random = Random();
+    _shuffledQuestions = widget.questions.map((q) {
+      final originalCorrect = q.options[q.correctOptionIndex];
+      final shuffledOptions = List<String>.from(q.options)..shuffle(random);
+      final newCorrectIndex = shuffledOptions.indexOf(originalCorrect);
+      return ExerciseQuestion(
+        questionText: q.questionText,
+        visualPrompt: q.visualPrompt,
+        audioPath: q.audioPath,
+        options: shuffledOptions,
+        correctOptionIndex: newCorrectIndex,
+      );
+    }).toList();
+
+    _selectedAnswers = List<int?>.filled(_shuffledQuestions.length, null);
   }
 
   @override
   void dispose() {
+    _autoAdvanceTimer?.cancel();
     _pageController.dispose();
     super.dispose();
   }
 
-  void _handleCheck() {
-    final selectedIdx = _selectedAnswers[_currentStep];
-    if (selectedIdx == null) return;
+  /// Dialog saat energi pemain habis (0).
+  void _showOutOfEnergyDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppColors.outlineDark, width: 2),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.bolt_rounded, color: AppColors.energyYellow, size: 28),
+            SizedBox(width: 8),
+            Text(
+              'Energi Habis!',
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                color: AppColors.outlineDark,
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Energi kamu sudah habis (0/20). Istirahat sejenak atau kembali ke beranda untuk mengisi energi.',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              Navigator.of(context).pop();
+            },
+            child: const Text(
+              'Kembali ke Beranda',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppColors.teal,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-    final question = widget.questions[_currentStep];
-    final isCorrect = selectedIdx == question.correctOptionIndex;
+  /// Dipanggil langsung ketika pengguna mengetuk salah satu opsi jawaban.
+  void _onOptionSelected(int questionIndex, int selectedIndex) {
+    if (_isProcessingAnswer || _currentFeedback != null) return;
+
+    // Cek ketersediaan energi
+    if (_currentEnergy <= 0) {
+      _showOutOfEnergyDialog();
+      return;
+    }
+
+    final question = _shuffledQuestions[questionIndex];
+    final isCorrect = selectedIndex == question.correctOptionIndex;
 
     setState(() {
+      _currentEnergy = (_currentEnergy - 1).clamp(0, widget.energyMax);
+      _isProcessingAnswer = true;
+      _selectedAnswers[questionIndex] = selectedIndex;
       _currentFeedback = isCorrect;
-      if (isCorrect) _correctCount++;
+      if (isCorrect) {
+        _correctCount++;
+      }
+    });
+
+    // Notifikasi perubahan energi ke parent (misal HomeScreen)
+    widget.onEnergyChanged?.call(_currentEnergy);
+
+    // Otomatis lanjut ke soal berikutnya:
+    // Jika benar: jeda 800ms
+    // Jika salah: jeda 1800ms agar sempat melihat jawaban yang benar (hijau) & salah (merah)
+    final delayMs = isCorrect ? 800 : 1800;
+    _autoAdvanceTimer?.cancel();
+    _autoAdvanceTimer = Timer(Duration(milliseconds: delayMs), () {
+      if (mounted && _isProcessingAnswer) {
+        _advanceNext();
+      }
     });
   }
 
+  void _advanceNext() {
+    _autoAdvanceTimer?.cancel();
+    _autoAdvanceTimer = null;
+    _isProcessingAnswer = false;
+    _handleNext();
+  }
+
   void _handleNext() {
-    if (_currentStep < widget.questions.length - 1) {
+    if (_currentStep < _shuffledQuestions.length - 1) {
       setState(() {
-        _prevProgress = (_currentStep + 1) / widget.questions.length;
+        _prevProgress = (_currentStep + 1) / _shuffledQuestions.length;
         _currentStep++;
         _currentFeedback = null;
+        _isProcessingAnswer = false;
       });
       _pageController.nextPage(
         duration: const Duration(milliseconds: 320),
@@ -106,7 +212,7 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
 
   void _showResultModal() {
     final unitTheme = UnitTheme.getTheme(widget.unitNumber);
-    final total = widget.questions.length;
+    final total = _shuffledQuestions.length;
     final percent = (_correctCount / total * 100).round();
     final passed = percent >= 70;
 
@@ -258,9 +364,8 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
   @override
   Widget build(BuildContext context) {
     final unitTheme = UnitTheme.getTheme(widget.unitNumber);
-    final targetProgress = (_currentStep + 1) / widget.questions.length;
-    final isAnswerSelected = _selectedAnswers[_currentStep] != null;
-    final isLastStep = _currentStep == widget.questions.length - 1;
+    final targetProgress = (_currentStep + 1) / _shuffledQuestions.length;
+    final isLastStep = _currentStep == _shuffledQuestions.length - 1;
 
     return PopScope(
       canPop: false,
@@ -277,9 +382,9 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
                 child: PageView.builder(
                   controller: _pageController,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: widget.questions.length,
+                  itemCount: _shuffledQuestions.length,
                   itemBuilder: (context, questionIndex) {
-                    final question = widget.questions[questionIndex];
+                    final question = _shuffledQuestions[questionIndex];
                     return SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                       child: _buildQuestionCard(
@@ -290,7 +395,7 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
               ),
 
               // --- Bottom: feedback bar + CTA ---
-              _buildBottomSection(unitTheme, isAnswerSelected, isLastStep),
+              _buildBottomSection(unitTheme, isLastStep),
             ],
           ),
         ),
@@ -356,7 +461,7 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
 
               // Counter
               Text(
-                '${_currentStep + 1}/${widget.questions.length}',
+                '${_currentStep + 1}/${_shuffledQuestions.length}',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
@@ -388,7 +493,7 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
               _StatBadge(
                 icon: Icons.bolt_rounded,
                 iconColor: AppColors.energyYellow,
-                value: '${widget.energy}/${widget.energyMax}',
+                value: '$_currentEnergy/${widget.energyMax}',
               ),
             ],
           ),
@@ -495,9 +600,8 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
                 shadowColor: shadowColor,
                 borderRadius: BorderRadius.circular(20),
                 onTap: _currentFeedback != null
-                    ? null // Sudah di-check, tidak bisa ubah
-                    : () => setState(
-                        () => _selectedAnswers[questionIndex] = index),
+                    ? null // Sudah dijawab, abaikan tap tambahan
+                    : () => _onOptionSelected(questionIndex, index),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Row(
@@ -556,91 +660,115 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
     );
   }
 
-  /// Bottom section: feedback bar + CTA button.
-  Widget _buildBottomSection(
-      UnitTheme unitTheme, bool isAnswerSelected, bool isLastStep) {
-    return Column(
-      children: [
-        // Feedback bar (muncul setelah "Periksa Jawaban")
-        if (_currentFeedback != null)
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            color: _currentFeedback!
-                ? const Color(0xFF22C55E).withValues(alpha: 0.12)
-                : AppColors.heartRed.withValues(alpha: 0.12),
-            child: Row(
-              children: [
-                Icon(
-                  _currentFeedback!
-                      ? Icons.check_circle_rounded
-                      : Icons.cancel_rounded,
-                  color: _currentFeedback!
-                      ? const Color(0xFF22C55E)
-                      : AppColors.heartRed,
-                  size: 24,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    _currentFeedback!
-                        ? 'Benar! Bagus sekali! 🎉'
-                        : 'Kurang tepat. Perhatikan jawaban yang benar.',
+  /// Bottom section: banner feedback saat jawaban dipilih (tanpa tombol periksa jawaban).
+  Widget _buildBottomSection(UnitTheme unitTheme, bool isLastStep) {
+    if (_currentFeedback == null) {
+      return const SizedBox(height: 20);
+    }
+
+    final isCorrect = _currentFeedback == true;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
+      decoration: BoxDecoration(
+        color: isCorrect
+            ? const Color(0xFFDCFCE7)
+            : const Color(0xFFFEE2E2),
+        border: Border(
+          top: BorderSide(
+            color: isCorrect
+                ? const Color(0xFF16A34A)
+                : const Color(0xFFDC2626),
+            width: 2,
+          ),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isCorrect
+                    ? const Color(0xFF16A34A)
+                    : const Color(0xFFDC2626),
+              ),
+              child: Icon(
+                isCorrect ? Icons.check : Icons.close,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    isCorrect ? 'Benar! Luar biasa 🎉' : 'Jawaban Kurang Tepat',
                     style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: _currentFeedback!
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      color: isCorrect
                           ? const Color(0xFF15803D)
                           : const Color(0xFF991B1B),
                     ),
                   ),
-                ),
-              ],
+                  if (!isCorrect)
+                    const Text(
+                      'Jawaban benar telah ditandai hijau',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFB91C1C),
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-
-        // CTA button
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          child: ChunkyPressable(
-            backgroundColor: _currentFeedback != null
-                ? (_currentFeedback!
-                    ? const Color(0xFF22C55E)
-                    : AppColors.heartRed)
-                : unitTheme.primary,
-            borderColor: AppColors.outlineDark,
-            shadowColor: _currentFeedback != null
-                ? (_currentFeedback!
-                    ? const Color(0xFF15803D)
-                    : const Color(0xFF991B1B))
-                : unitTheme.dark,
-            shadowOffset: 6,
-            borderRadius: BorderRadius.circular(20),
-            onTap: !isAnswerSelected
-                ? null
-                : _currentFeedback == null
-                    ? _handleCheck
-                    : _handleNext,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 18),
-              child: Center(
-                child: Text(
-                  _currentFeedback == null
-                      ? 'PERIKSA JAWABAN'
-                      : (isLastStep ? 'LIHAT HASIL' : 'LANJUT'),
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0.5,
-                    color: Colors.white,
+            // Tombol cepat jika ingin langsung lanjut tanpa menunggu jeda
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: _advanceNext,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isCorrect
+                        ? const Color(0xFF16A34A)
+                        : const Color(0xFFDC2626),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        isLastStep ? 'Hasil' : 'Lanjut',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.arrow_forward_rounded,
+                          size: 16, color: Colors.white),
+                    ],
                   ),
                 ),
               ),
             ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 

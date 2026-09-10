@@ -465,9 +465,40 @@ class _PlacementTestQuestionScreenState
                   ],
                 ),
               ),
+              if (result.unitNumber > 1) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFBEB),
+                    borderRadius: BorderRadius.circular(14),
+                    border:
+                        Border.all(color: const Color(0xFFD97706), width: 1.5),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.info_outline_rounded,
+                          size: 20, color: Color(0xFFD97706)),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Materi Unit 1 (13 level) telah siap dipelajari! Sembari kurikulum unit lanjutan disiapkan, yuk mantapkan pemahamanmu dari Unit 1.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF92400E),
+                            height: 1.35,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
 
-              // Tombol Mulai Belajar (Mengikuti Tema Unit)
+              // Tombol Mulai Belajar
               SizedBox(
                 width: double.infinity,
                 height: 52,
@@ -477,10 +508,8 @@ class _PlacementTestQuestionScreenState
                     widget.onCompleted?.call(answers);
                     Navigator.of(context).pushAndRemoveUntil(
                       MaterialPageRoute(
-                        builder: (context) => HomeScreen(
-                          startingUnit: result.unitNumber,
-                          startingUnitTitle: result.unitTitle,
-                          startingUnitSubtitle: result.unitSubtitle,
+                        builder: (context) => const HomeScreen(
+                          startingUnit: 1,
                         ),
                       ),
                       (route) => false,
