@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/core/theme/app_colors.dart';
 import 'package:frontend/core/theme/unit_theme.dart';
 import 'package:frontend/features/exercise/data/models/exercise_model.dart';
+import 'package:frontend/features/shop/presentation/out_of_energy_sheet.dart';
 import 'widgets/chunky_pressable.dart';
 
 /// Halaman soal latihan di dalam pelajaran.
@@ -102,48 +103,12 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
 
   /// Dialog saat energi pemain habis (0).
   void _showOutOfEnergyDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(color: AppColors.outlineDark, width: 2),
-        ),
-        title: const Row(
-          children: [
-            Icon(Icons.bolt_rounded, color: AppColors.energyYellow, size: 28),
-            SizedBox(width: 8),
-            Text(
-              'Energi Habis!',
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                color: AppColors.outlineDark,
-              ),
-            ),
-          ],
-        ),
-        content: const Text(
-          'Energi kamu sudah habis (0/20). Istirahat sejenak atau kembali ke beranda untuk mengisi energi.',
-          style: TextStyle(color: AppColors.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.of(context).pop();
-            },
-            child: const Text(
-              'Kembali ke Beranda',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppColors.teal,
-              ),
-            ),
-          ),
-        ],
-      ),
+    OutOfEnergySheet.show(
+      context,
+      onWait: () {
+        // Kembali ke beranda setelah user memilih tunggu
+        Navigator.of(context).pop();
+      },
     );
   }
 

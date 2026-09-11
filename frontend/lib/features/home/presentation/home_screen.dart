@@ -5,6 +5,8 @@ import 'package:frontend/core/theme/app_colors.dart';
 import 'package:frontend/core/theme/unit_theme.dart';
 import 'package:frontend/features/exercise/data/unit_1_curriculum.dart';
 import 'package:frontend/features/exercise/presentation/exercise_question_screen.dart';
+import 'package:frontend/features/shop/presentation/shop_screen.dart';
+import 'package:frontend/features/shop/presentation/out_of_energy_sheet.dart';
 import 'widgets/gamification_header.dart';
 import 'widgets/learning_node.dart';
 
@@ -320,13 +322,9 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Navigasi ke ExerciseQuestionScreen dengan data soal dari kurikulum Unit 1.
   void _navigateToExercise(Map<String, dynamic> lesson) {
     if (_energy <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            '⚡ Energi kamu habis (0/20)! Pulihkan energi untuk lanjut belajar.',
-          ),
-          backgroundColor: AppColors.heartRed,
-        ),
+      OutOfEnergySheet.show(
+        context,
+        countdownText: _energyTimerText,
       );
       return;
     }
@@ -708,6 +706,13 @@ class _HomeScreenState extends State<HomeScreen> {
         child: NavigationBar(
           selectedIndex: _currentNavIndex,
           onDestinationSelected: (index) {
+            if (index == 3) {
+              // Shop → buka ShopScreen
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ShopScreen()),
+              );
+              return;
+            }
             setState(() {
               _currentNavIndex = index;
             });
