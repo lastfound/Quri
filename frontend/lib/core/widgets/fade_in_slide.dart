@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 /// Widget pembungkus untuk animasi masuk (entrance animation) bertahap (*staggered*).
@@ -40,6 +41,7 @@ class _FadeInSlideState extends State<FadeInSlide>
   late final Animation<double> _fadeAnimation;
   late final Animation<Offset> _slideAnimation;
   late final Animation<double>? _scaleAnimation;
+  Timer? _delayTimer;
 
   @override
   void initState() {
@@ -69,7 +71,7 @@ class _FadeInSlideState extends State<FadeInSlide>
     if (widget.delay == Duration.zero) {
       _controller.forward();
     } else {
-      Future.delayed(widget.delay, () {
+      _delayTimer = Timer(widget.delay, () {
         if (mounted) {
           _controller.forward();
         }
@@ -79,6 +81,7 @@ class _FadeInSlideState extends State<FadeInSlide>
 
   @override
   void dispose() {
+    _delayTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }

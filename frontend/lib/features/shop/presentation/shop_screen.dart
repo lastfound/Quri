@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/core/theme/app_colors.dart';
+import 'package:frontend/core/widgets/fade_in_slide.dart';
 
 /// Layar pilihan paket langganan premium Quri.
 /// Menampilkan tiga tier: Gratis, Quri Booster, dan Quri Pro.
@@ -39,154 +40,179 @@ class ShopScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Header icon
-            Center(
-              child: Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: AppColors.goldPremium.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                      color: AppColors.goldPremium, width: 2),
-                  boxShadow: AppColors.solidShadow(
-                      offset: 4, color: AppColors.goldDark),
-                ),
-                child: const Icon(
-                  Icons.workspace_premium_rounded,
-                  color: AppColors.goldPremium,
-                  size: 40,
+            FadeInSlide(
+              delay: const Duration(milliseconds: 100),
+              withScale: true,
+              child: Center(
+                child: Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: AppColors.goldPremium.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                        color: AppColors.goldPremium, width: 2),
+                    boxShadow: AppColors.solidShadow(
+                        offset: 4, color: AppColors.goldDark),
+                  ),
+                  child: const Icon(
+                    Icons.workspace_premium_rounded,
+                    color: AppColors.goldPremium,
+                    size: 40,
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: 20),
 
             // Title
-            const Text(
-              'Pilih Paket Belajar\nKamu',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w900,
-                color: AppColors.teal,
-                height: 1.15,
+            FadeInSlide(
+              delay: const Duration(milliseconds: 200),
+              child: const Text(
+                'Pilih Paket Belajar\nKamu',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.teal,
+                  height: 1.15,
+                ),
               ),
             ),
             const SizedBox(height: 10),
-            const Text(
-              'Investasi akhirat yang fleksibel sesuai\nkebutuhan belajarmu.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-                height: 1.4,
+            FadeInSlide(
+              delay: const Duration(milliseconds: 300),
+              child: const Text(
+                'Investasi akhirat yang fleksibel sesuai\nkebutuhan belajarmu.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                ),
               ),
             ),
             const SizedBox(height: 28),
 
             // ── GRATIS PLAN ──
-            _PlanCard(
-              badge: null,
-              badgeColor: Colors.transparent,
-              badgeFg: Colors.transparent,
-              title: 'GRATIS',
-              price: 'Rp 0',
-              priceSuffix: '/bulan',
-              features: const [
-                _PlanFeature(
-                  text: 'Maksimal 20 Energi Harian',
-                  available: false,
-                ),
-                _PlanFeature(
-                  text: 'Waktu Isi Ulang Normal (1 Energi / 30 Menit)',
-                  available: false,
-                ),
-                _PlanFeature(
-                  text: 'Akses Seluruh Materi Dasar',
-                  available: false,
-                ),
-              ],
-              buttonText: 'Paket Saat Ini',
-              buttonEnabled: false,
-              onPressed: null,
-              cardColor: Colors.white,
-              accentColor: AppColors.textSecondary,
-              titleColor: AppColors.outlineDark,
+            FadeInSlide(
+              delay: const Duration(milliseconds: 450),
+              beginOffset: const Offset(0.0, 0.15),
+              child: _PlanCard(
+                badge: null,
+                badgeColor: Colors.transparent,
+                badgeFg: Colors.transparent,
+                title: 'GRATIS',
+                price: 'Rp 0',
+                priceSuffix: '/bulan',
+                features: const [
+                  _PlanFeature(
+                    text: 'Maksimal 20 Energi Harian',
+                    available: false,
+                  ),
+                  _PlanFeature(
+                    text: 'Waktu Isi Ulang Normal (1 Energi / 30 Menit)',
+                    available: false,
+                  ),
+                  _PlanFeature(
+                    text: 'Akses Seluruh Materi Dasar',
+                    available: false,
+                  ),
+                ],
+                buttonText: 'Paket Saat Ini',
+                buttonEnabled: false,
+                onPressed: null,
+                cardColor: Colors.white,
+                accentColor: AppColors.textSecondary,
+                titleColor: AppColors.outlineDark,
+              ),
             ),
             const SizedBox(height: 16),
 
             // ── QURI BOOSTER ──
-            _PlanCard(
-              badge: 'HEMAT & EFISIEN',
-              badgeColor: AppColors.teal,
-              badgeFg: Colors.white,
-              title: 'QURI BOOSTER',
-              price: 'Rp 19k',
-              priceSuffix: '/ bulan',
-              features: const [
-                _PlanFeature(
-                  text: 'Kapasitas Energi 2x Lipat (40 Energi)',
-                  available: true,
-                ),
-                _PlanFeature(
-                  text: 'Kecepatan Isi Ulang Energi 2x Lebih Cepat (1 Energi / 15 Menit)',
-                  available: true,
-                ),
-                _PlanFeature(text: 'Bebas Iklan 100%', available: true),
-                _PlanFeature(
-                    text: 'Pengenal Makhraj Dasar', available: true),
-              ],
-              buttonText: 'Pilih Quri Booster',
-              buttonEnabled: true,
-              onPressed: () => _showComingSoon(context),
-              cardColor: const Color(0xFFF7FBF8),
-              accentColor: AppColors.teal,
-              titleColor: AppColors.teal,
+            FadeInSlide(
+              delay: const Duration(milliseconds: 600),
+              beginOffset: const Offset(0.0, 0.15),
+              child: _PlanCard(
+                badge: 'HEMAT & EFISIEN',
+                badgeColor: AppColors.teal,
+                badgeFg: Colors.white,
+                title: 'QURI BOOSTER',
+                price: 'Rp 19k',
+                priceSuffix: '/ bulan',
+                features: const [
+                  _PlanFeature(
+                    text: 'Kapasitas Energi 2x Lipat (40 Energi)',
+                    available: true,
+                  ),
+                  _PlanFeature(
+                    text: 'Kecepatan Isi Ulang Energi 2x Lebih Cepat (1 Energi / 15 Menit)',
+                    available: true,
+                  ),
+                  _PlanFeature(text: 'Bebas Iklan 100%', available: true),
+                  _PlanFeature(
+                      text: 'Pengenal Makhraj Dasar', available: true),
+                ],
+                buttonText: 'Pilih Quri Booster',
+                buttonEnabled: true,
+                onPressed: () => _showComingSoon(context),
+                cardColor: const Color(0xFFF7FBF8),
+                accentColor: AppColors.teal,
+                titleColor: AppColors.teal,
+              ),
             ),
             const SizedBox(height: 16),
 
             // ── QURI PRO ──
-            _PlanCard(
-              badge: 'PALING POPULER / UNLIMITED',
-              badgeColor: AppColors.goldPremium,
-              badgeFg: AppColors.outlineDark,
-              title: 'QURI PRO',
-              price: 'Rp 49k',
-              priceSuffix: '/ bulan',
-              features: const [
-                _PlanFeature(
-                  text: 'ENERGI TAK TERBATAS (Unlimited Energy)',
-                  available: true,
-                  bold: true,
-                  icon: Icons.bolt_rounded,
-                  iconColor: AppColors.energyYellow,
-                ),
-                _PlanFeature(
-                    text: 'Koreksi AI Makhraj Canggih & Real-time',
-                    available: true),
-                _PlanFeature(
-                    text: 'Mode Offline (Unduh Materi)', available: true),
-                _PlanFeature(
-                    text: 'Lencana & Profil Emas Khusus', available: true),
-                _PlanFeature(
-                    text: 'Prioritas Dukungan Pembelajaran', available: true),
-              ],
-              buttonText: 'Upgrade ke Quri Pro',
-              buttonEnabled: true,
-              onPressed: () => _showComingSoon(context),
-              cardColor: AppColors.teal,
-              accentColor: AppColors.goldPremium,
-              titleColor: AppColors.goldPremium,
-              darkMode: true,
+            FadeInSlide(
+              delay: const Duration(milliseconds: 750),
+              beginOffset: const Offset(0.0, 0.15),
+              child: _PlanCard(
+                badge: 'PALING POPULER / UNLIMITED',
+                badgeColor: AppColors.goldPremium,
+                badgeFg: AppColors.outlineDark,
+                title: 'QURI PRO',
+                price: 'Rp 49k',
+                priceSuffix: '/ bulan',
+                features: const [
+                  _PlanFeature(
+                    text: 'ENERGI TAK TERBATAS (Unlimited Energy)',
+                    available: true,
+                    bold: true,
+                    icon: Icons.bolt_rounded,
+                    iconColor: AppColors.energyYellow,
+                  ),
+                  _PlanFeature(
+                      text: 'Koreksi AI Makhraj Canggih & Real-time',
+                      available: true),
+                  _PlanFeature(
+                      text: 'Mode Offline (Unduh Materi)', available: true),
+                  _PlanFeature(
+                      text: 'Lencana & Profil Emas Khusus', available: true),
+                  _PlanFeature(
+                      text: 'Prioritas Dukungan Pembelajaran', available: true),
+                ],
+                buttonText: 'Upgrade ke Quri Pro',
+                buttonEnabled: true,
+                onPressed: () => _showComingSoon(context),
+                cardColor: AppColors.teal,
+                accentColor: AppColors.goldPremium,
+                titleColor: AppColors.goldPremium,
+                darkMode: true,
+              ),
             ),
             const SizedBox(height: 24),
 
             // Footer note
-            const Text(
-              'Bisa dibatalkan kapan saja. Bebas komitmen.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
+            FadeInSlide(
+              delay: const Duration(milliseconds: 900),
+              child: const Text(
+                'Bisa dibatalkan kapan saja. Bebas komitmen.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ),
           ],

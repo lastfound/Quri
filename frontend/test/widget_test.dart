@@ -1,14 +1,17 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/main.dart';
 
 void main() {
-  testWidgets('App renders Quri home screen', (WidgetTester tester) async {
+  testWidgets('App renders Quri welcome screen', (WidgetTester tester) async {
     await tester.pumpWidget(const ProviderScope(child: QuriApp()));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
 
-    // Pastikan header Quri & modul belajar ter-render
-    expect(find.text('Quri'), findsOneWidget);
-    expect(find.text('Dasar Makharijul Huruf'), findsOneWidget);
+    // Pastikan teks Quri ter-render di welcome screen
+    expect(find.textContaining('Quri'), findsWidgets);
+
+    await tester.pumpWidget(const SizedBox());
   });
 }

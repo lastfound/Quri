@@ -105,6 +105,8 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
   void _showOutOfEnergyDialog() {
     OutOfEnergySheet.show(
       context,
+      currentEnergy: _currentEnergy,
+      maxEnergy: widget.energyMax,
       onWait: () {
         // Kembali ke beranda setelah user memilih tunggu
         Navigator.of(context).pop();

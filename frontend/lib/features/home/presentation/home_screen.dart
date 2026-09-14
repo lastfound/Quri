@@ -325,6 +325,9 @@ class _HomeScreenState extends State<HomeScreen> {
       OutOfEnergySheet.show(
         context,
         countdownText: _energyTimerText,
+        energyService: _energyService,
+        currentEnergy: _energy,
+        maxEnergy: _maxEnergy,
       );
       return;
     }
