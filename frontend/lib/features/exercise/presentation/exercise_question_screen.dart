@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:frontend/core/services/audio_service.dart';
 import 'package:frontend/core/theme/app_colors.dart';
 import 'package:frontend/core/theme/unit_theme.dart';
 import 'package:frontend/features/exercise/data/models/exercise_model.dart';
-import 'package:frontend/features/shop/presentation/out_of_energy_sheet.dart';
 import 'widgets/chunky_pressable.dart';
 
 /// Halaman soal latihan di dalam pelajaran.
@@ -27,11 +27,8 @@ class ExerciseQuestionScreen extends StatefulWidget {
 
   final int streak;
   final int gems;
-  final int energy;
-  final int energyMax;
 
   final VoidCallback? onClose;
-  final ValueChanged<int>? onEnergyChanged;
 
   /// Dipanggil saat seluruh soal selesai, membawa jumlah jawaban benar.
   final void Function(int correctCount, int totalCount)? onCompleted;
@@ -44,10 +41,7 @@ class ExerciseQuestionScreen extends StatefulWidget {
     this.xpReward = 20,
     this.streak = 0,
     this.gems = 50,
-    this.energy = 20,
-    this.energyMax = 20,
     this.onClose,
-    this.onEnergyChanged,
     this.onCompleted,
   });
 
@@ -60,7 +54,6 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
   late final PageController _pageController;
   late final List<ExerciseQuestion> _shuffledQuestions;
   late final List<int?> _selectedAnswers;
-  late int _currentEnergy;
   int _currentStep = 0;
   double _prevProgress = 0.0;
   int _correctCount = 0;
@@ -74,7 +67,6 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
   void initState() {
     super.initState();
     _pageController = PageController();
-    _currentEnergy = widget.energy;
 
     // Acak posisi pilihan ganda agar jawaban benar tidak selalu di opsi pertama (A)
     final random = Random();
@@ -101,34 +93,21 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
     super.dispose();
   }
 
-  /// Dialog saat energi pemain habis (0).
-  void _showOutOfEnergyDialog() {
-    OutOfEnergySheet.show(
-      context,
-      currentEnergy: _currentEnergy,
-      maxEnergy: widget.energyMax,
-      onWait: () {
-        // Kembali ke beranda setelah user memilih tunggu
-        Navigator.of(context).pop();
-      },
-    );
-  }
-
   /// Dipanggil langsung ketika pengguna mengetuk salah satu opsi jawaban.
   void _onOptionSelected(int questionIndex, int selectedIndex) {
     if (_isProcessingAnswer || _currentFeedback != null) return;
 
-    // Cek ketersediaan energi
-    if (_currentEnergy <= 0) {
-      _showOutOfEnergyDialog();
-      return;
-    }
-
     final question = _shuffledQuestions[questionIndex];
     final isCorrect = selectedIndex == question.correctOptionIndex;
 
+    // Putar efek suara jawaban (benar / salah)
+    if (isCorrect) {
+      AudioService.instance.playCorrectSound();
+    } else {
+      AudioService.instance.playWrongSound();
+    }
+
     setState(() {
-      _currentEnergy = (_currentEnergy - 1).clamp(0, widget.energyMax);
       _isProcessingAnswer = true;
       _selectedAnswers[questionIndex] = selectedIndex;
       _currentFeedback = isCorrect;
@@ -136,9 +115,6 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
         _correctCount++;
       }
     });
-
-    // Notifikasi perubahan energi ke parent (misal HomeScreen)
-    widget.onEnergyChanged?.call(_currentEnergy);
 
     // Otomatis lanjut ke soal berikutnya:
     // Jika benar: jeda 800ms
@@ -182,6 +158,11 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
     final total = _shuffledQuestions.length;
     final percent = (_correctCount / total * 100).round();
     final passed = percent >= 70;
+
+    // Putar efek suara saat menyelesaikan level jika lulus
+    if (passed) {
+      AudioService.instance.playLevelCompleteSound();
+    }
 
     showModalBottomSheet(
       context: context,
@@ -455,12 +436,6 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
                 icon: Icons.diamond_rounded,
                 iconColor: AppColors.gemBlue,
                 value: '${widget.gems}',
-              ),
-              const SizedBox(width: 8),
-              _StatBadge(
-                icon: Icons.bolt_rounded,
-                iconColor: AppColors.energyYellow,
-                value: '$_currentEnergy/${widget.energyMax}',
               ),
             ],
           ),

@@ -1,12 +1,9 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:frontend/core/services/energy_service.dart';
 import 'package:frontend/core/theme/app_colors.dart';
 import 'package:frontend/core/theme/unit_theme.dart';
 import 'package:frontend/features/exercise/data/unit_1_curriculum.dart';
 import 'package:frontend/features/exercise/presentation/exercise_question_screen.dart';
 import 'package:frontend/features/shop/presentation/shop_screen.dart';
-import 'package:frontend/features/shop/presentation/out_of_energy_sheet.dart';
 import 'widgets/gamification_header.dart';
 import 'widgets/learning_node.dart';
 
@@ -31,14 +28,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Track level terakhir yang sudah di-unlock untuk Unit 1 (0-indexed).
   int _unlockedUpTo = 0;
-
-  /// Energi pengguna — dikelola oleh [EnergyService].
-  final EnergyService _energyService = EnergyService();
-  int _energy = 20;
-  static const int _maxEnergy = 20;
-  String _energyTimerText = '';
-  Timer? _energyTickTimer;
-  bool _energyServiceReady = false;
 
   /// Track stars per level untuk Unit 1 (0 = belum selesai, 1-3 = sesuai performa).
   late List<int> _starsByLevel;
@@ -81,44 +70,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _starsByLevel = List<int>.filled(Unit1Curriculum.levels.length, 0);
-    _initEnergyService();
-  }
-
-  @override
-  void dispose() {
-    _energyTickTimer?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _initEnergyService() async {
-    await _energyService.init();
-    _energyServiceReady = true;
-    _refreshEnergy();
-    // Tick setiap detik agar countdown terlihat hidup
-    _energyTickTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) _refreshEnergy();
-    });
-  }
-
-  void _refreshEnergy() {
-    if (!_energyServiceReady) return;
-    final current = _energyService.getCurrentEnergy();
-    final remaining = _energyService.getTimeToNextRegen();
-
-    String timerText = '';
-    if (current < _maxEnergy && remaining != null) {
-      final totalSec = remaining.inSeconds;
-      final m = (totalSec ~/ 60).toString().padLeft(2, '0');
-      final s = (totalSec % 60).toString().padLeft(2, '0');
-      timerText = '$m:$s';
-    }
-
-    if (_energy != current || _energyTimerText != timerText) {
-      setState(() {
-        _energy = current;
-        _energyTimerText = timerText;
-      });
-    }
   }
 
   /// Membangun data lessons dari kurikulum Unit 1 + status unlock.
@@ -321,17 +272,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Navigasi ke ExerciseQuestionScreen dengan data soal dari kurikulum Unit 1.
   void _navigateToExercise(Map<String, dynamic> lesson) {
-    if (_energy <= 0) {
-      OutOfEnergySheet.show(
-        context,
-        countdownText: _energyTimerText,
-        energyService: _energyService,
-        currentEnergy: _energy,
-        maxEnergy: _maxEnergy,
-      );
-      return;
-    }
-
     final int levelIndex = lesson['levelIndex'];
     final level = Unit1Curriculum.levels[levelIndex];
 
@@ -344,12 +284,6 @@ class _HomeScreenState extends State<HomeScreen> {
           xpReward: level.xpReward,
           streak: 0,
           gems: 50,
-          energy: _energy,
-          energyMax: _maxEnergy,
-          onEnergyChanged: (newEnergy) {
-            _energyService.setEnergy(newEnergy);
-            _refreshEnergy();
-          },
           onCompleted: (correctCount, totalCount) {
             // Hitung bintang berdasarkan persentase benar
             final percent = correctCount / totalCount * 100;
@@ -598,12 +532,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.cream,
-      appBar: GamificationHeader(
+      appBar: const GamificationHeader(
         streak: 0,
         gems: 50,
-        energy: _energy,
-        energyMax: _maxEnergy,
-        energyTimerText: _energyTimerText,
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 24),

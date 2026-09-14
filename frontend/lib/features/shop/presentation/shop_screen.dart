@@ -69,7 +69,7 @@ class ShopScreen extends StatelessWidget {
             FadeInSlide(
               delay: const Duration(milliseconds: 200),
               child: const Text(
-                'Pilih Paket Belajar\nKamu',
+                'Pilih Paket Belajar\n& Tahfidz Kamu',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 28,
@@ -83,7 +83,7 @@ class ShopScreen extends StatelessWidget {
             FadeInSlide(
               delay: const Duration(milliseconds: 300),
               child: const Text(
-                'Investasi akhirat yang fleksibel sesuai\nkebutuhan belajarmu.',
+                'Latihan dasar 100% gratis tanpa batas energi.\nBuka fitur menghafal & murojaah Al-Qur\'an untuk akselerasi hafalanmu.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
@@ -99,27 +99,38 @@ class ShopScreen extends StatelessWidget {
               delay: const Duration(milliseconds: 450),
               beginOffset: const Offset(0.0, 0.15),
               child: _PlanCard(
-                badge: null,
-                badgeColor: Colors.transparent,
-                badgeFg: Colors.transparent,
-                title: 'GRATIS',
+                badge: '100% GRATIS SELAMANYA',
+                badgeColor: const Color(0xFFDCFCE7),
+                badgeFg: const Color(0xFF15803D),
+                title: 'LATIHAN DASAR',
                 price: 'Rp 0',
-                priceSuffix: '/bulan',
+                priceSuffix: '/selamanya',
                 features: const [
                   _PlanFeature(
-                    text: 'Maksimal 20 Energi Harian',
+                    text: 'Akses Penuh Seluruh Materi Dasar (Huruf Hijaiyah, Harakat, Tanwin, Tajwid)',
+                    available: true,
+                  ),
+                  _PlanFeature(
+                    text: 'Latihan Interaktif Bebas Tanpa Batas (Tanpa Sistem Energi)',
+                    available: true,
+                    bold: true,
+                    icon: Icons.all_inclusive_rounded,
+                    iconColor: AppColors.teal,
+                  ),
+                  _PlanFeature(
+                    text: 'Audio Pelafalan Huruf Lengkap',
+                    available: true,
+                  ),
+                  _PlanFeature(
+                    text: 'Fitur Menghafal Al-Qur\'an (Tahfidz Mandiri)',
                     available: false,
                   ),
                   _PlanFeature(
-                    text: 'Waktu Isi Ulang Normal (1 Energi / 30 Menit)',
-                    available: false,
-                  ),
-                  _PlanFeature(
-                    text: 'Akses Seluruh Materi Dasar',
+                    text: 'Fitur Memurojaah Al-Qur\'an Cerdas',
                     available: false,
                   ),
                 ],
-                buttonText: 'Paket Saat Ini',
+                buttonText: 'Paket Saat Ini (Aktif)',
                 buttonEnabled: false,
                 onPressed: null,
                 cardColor: Colors.white,
@@ -129,31 +140,43 @@ class ShopScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // ── QURI BOOSTER ──
+            // ── QURI HAFIZ ──
             FadeInSlide(
               delay: const Duration(milliseconds: 600),
               beginOffset: const Offset(0.0, 0.15),
               child: _PlanCard(
-                badge: 'HEMAT & EFISIEN',
+                badge: 'SPESIAL MENGHAFAL & MUROJAAH',
                 badgeColor: AppColors.teal,
                 badgeFg: Colors.white,
-                title: 'QURI BOOSTER',
-                price: 'Rp 19k',
+                title: 'QURI HAFIZ',
+                price: 'Rp 29k',
                 priceSuffix: '/ bulan',
                 features: const [
                   _PlanFeature(
-                    text: 'Kapasitas Energi 2x Lipat (40 Energi)',
+                    text: 'Semua Fitur Latihan Dasar Gratis',
                     available: true,
                   ),
                   _PlanFeature(
-                    text: 'Kecepatan Isi Ulang Energi 2x Lebih Cepat (1 Energi / 15 Menit)',
+                    text: 'Fitur Menghafal Al-Qur\'an (Target Surah & Juz, Blok Ayat Interaktif & Rekaman Mandiri)',
+                    available: true,
+                    bold: true,
+                    icon: Icons.menu_book_rounded,
+                    iconColor: AppColors.teal,
+                  ),
+                  _PlanFeature(
+                    text: 'Fitur Memurojaah Al-Qur\'an (Spaced Repetition Murojaah & Tes Sambung Ayat)',
+                    available: true,
+                    bold: true,
+                    icon: Icons.replay_circle_filled_rounded,
+                    iconColor: AppColors.teal,
+                  ),
+                  _PlanFeature(
+                    text: 'Pelacak Mutqin & Grafik Kemajuan Hafalan',
                     available: true,
                   ),
                   _PlanFeature(text: 'Bebas Iklan 100%', available: true),
-                  _PlanFeature(
-                      text: 'Pengenal Makhraj Dasar', available: true),
                 ],
-                buttonText: 'Pilih Quri Booster',
+                buttonText: 'Pilih Quri Hafiz',
                 buttonEnabled: true,
                 onPressed: () => _showComingSoon(context),
                 cardColor: const Color(0xFFF7FBF8),
@@ -168,7 +191,7 @@ class ShopScreen extends StatelessWidget {
               delay: const Duration(milliseconds: 750),
               beginOffset: const Offset(0.0, 0.15),
               child: _PlanCard(
-                badge: 'PALING POPULER / UNLIMITED',
+                badge: 'AKSES LENGKAP + AI MAKHRAJ',
                 badgeColor: AppColors.goldPremium,
                 badgeFg: AppColors.outlineDark,
                 title: 'QURI PRO',
@@ -176,21 +199,35 @@ class ShopScreen extends StatelessWidget {
                 priceSuffix: '/ bulan',
                 features: const [
                   _PlanFeature(
-                    text: 'ENERGI TAK TERBATAS (Unlimited Energy)',
+                    text: 'Seluruh Fitur Quri Hafiz (Menghafal & Memurojaah Penuh)',
                     available: true,
                     bold: true,
-                    icon: Icons.bolt_rounded,
-                    iconColor: AppColors.energyYellow,
+                    icon: Icons.check_circle_rounded,
+                    iconColor: AppColors.goldPremium,
                   ),
                   _PlanFeature(
-                      text: 'Koreksi AI Makhraj Canggih & Real-time',
-                      available: true),
+                    text: 'Koreksi AI Makhraj & Tajwid Canggih Real-time',
+                    available: true,
+                    bold: true,
+                    icon: Icons.mic_rounded,
+                    iconColor: AppColors.goldPremium,
+                  ),
                   _PlanFeature(
-                      text: 'Mode Offline (Unduh Materi)', available: true),
+                    text: 'Audio Tilawah 30 Juz dari Qari Internasional',
+                    available: true,
+                  ),
                   _PlanFeature(
-                      text: 'Lencana & Profil Emas Khusus', available: true),
+                    text: 'Mode Offline (Unduh Surah & Audio Hafalan)',
+                    available: true,
+                  ),
                   _PlanFeature(
-                      text: 'Prioritas Dukungan Pembelajaran', available: true),
+                    text: 'Lencana & Profil Emas Hafiz Khusus',
+                    available: true,
+                  ),
+                  _PlanFeature(
+                    text: 'Prioritas Pendampingan Pembelajaran',
+                    available: true,
+                  ),
                 ],
                 buttonText: 'Upgrade ke Quri Pro',
                 buttonEnabled: true,
