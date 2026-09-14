@@ -4,6 +4,7 @@ import 'package:frontend/core/theme/unit_theme.dart';
 import 'package:frontend/features/exercise/data/unit_1_curriculum.dart';
 import 'package:frontend/features/exercise/presentation/exercise_question_screen.dart';
 import 'package:frontend/features/profile/presentation/profile_screen.dart';
+import 'package:frontend/features/rank/presentation/rank_screen.dart';
 import 'package:frontend/features/shop/presentation/shop_screen.dart';
 import 'widgets/gamification_header.dart';
 import 'widgets/learning_node.dart';
@@ -641,6 +642,13 @@ class _HomeScreenState extends State<HomeScreen> {
         child: NavigationBar(
           selectedIndex: _currentNavIndex,
           onDestinationSelected: (index) {
+            if (index == 2) {
+              // Rank → buka RankScreen (Leaderboard)
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const RankScreen()),
+              );
+              return;
+            }
             if (index == 3) {
               // Shop → buka ShopScreen
               Navigator.of(context).push(
