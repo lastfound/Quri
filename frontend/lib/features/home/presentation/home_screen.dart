@@ -3,6 +3,7 @@ import 'package:frontend/core/theme/app_colors.dart';
 import 'package:frontend/core/theme/unit_theme.dart';
 import 'package:frontend/features/exercise/data/unit_1_curriculum.dart';
 import 'package:frontend/features/exercise/presentation/exercise_question_screen.dart';
+import 'package:frontend/features/profile/presentation/profile_screen.dart';
 import 'package:frontend/features/shop/presentation/shop_screen.dart';
 import 'widgets/gamification_header.dart';
 import 'widgets/learning_node.dart';
@@ -644,6 +645,13 @@ class _HomeScreenState extends State<HomeScreen> {
               // Shop → buka ShopScreen
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const ShopScreen()),
+              );
+              return;
+            }
+            if (index == 4) {
+              // Profile → buka ProfileScreen
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
               );
               return;
             }
