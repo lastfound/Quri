@@ -6,9 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   testWidgets('OutOfEnergySheet renders lightning bolt icon and cooldown',
       (WidgetTester tester) async {
-    // 31 minutes and 15 seconds elapsed => 28:45 remaining out of 60 mins
+    // 1 minute and 15 seconds elapsed => 28:45 remaining out of 30 mins
     final now = DateTime.now().millisecondsSinceEpoch;
-    final elapsedMs = (31 * 60 + 15) * 1000;
+    final elapsedMs = (1 * 60 + 15) * 1000;
     SharedPreferences.setMockInitialValues({
       'quri_energy': 0,
       'quri_energy_last_used_at': now - elapsedMs,

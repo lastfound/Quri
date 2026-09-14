@@ -145,7 +145,8 @@ class _OutOfEnergySheetState extends State<OutOfEnergySheet>
         final m = int.tryParse(parts[0]) ?? 0;
         final s = int.tryParse(parts[1]) ?? 0;
         final remainingSec = m * 60 + s;
-        const totalSec = 60 * 60; // default 60 menit
+        final totalSec =
+            (widget.energyService?.regenIntervalMinutes ?? 30) * 60; // default 30 menit
         final elapsed = (totalSec - remainingSec).clamp(0, totalSec);
         _targetProgress = (elapsed / totalSec).clamp(0.0, 1.0);
       }

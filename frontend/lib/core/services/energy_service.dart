@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Mengelola sistem energi dengan regenerasi otomatis.
 ///
 /// - Energi maksimal: [maxEnergy] (default 20).
-/// - Setiap [regenIntervalMinutes] menit (default 60 = 1 jam), 1 energi pulih.
+/// - Setiap [regenIntervalMinutes] menit (default 30 = 30 menit), 1 energi pulih.
 /// - State disimpan ke SharedPreferences agar bertahan saat app ditutup.
 class EnergyService {
   static const String _keyEnergy = 'quri_energy';
@@ -17,7 +17,7 @@ class EnergyService {
 
   EnergyService({
     this.maxEnergy = 20,
-    this.regenIntervalMinutes = 60,
+    this.regenIntervalMinutes = 30,
   });
 
   /// Inisialisasi — harus dipanggil sebelum menggunakan service.
