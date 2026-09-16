@@ -25,6 +25,12 @@ class ExerciseQuestionScreen extends StatefulWidget {
   /// XP reward saat menyelesaikan seluruh soal.
   final int xpReward;
 
+  /// Batas waktu pengerjaan dalam menit (15 untuk checkpoint, 17 untuk boss, null untuk latihan biasa).
+  final int? timeLimitMinutes;
+
+  /// Menandai apakah ini merupakan mode ujian (Checkpoint/Boss)
+  final bool isExam;
+
   final int streak;
   final int gems;
 
@@ -39,6 +45,8 @@ class ExerciseQuestionScreen extends StatefulWidget {
     this.levelTitle = 'Latihan',
     this.unitNumber = 1,
     this.xpReward = 20,
+    this.timeLimitMinutes,
+    this.isExam = false,
     this.streak = 0,
     this.gems = 50,
     this.onClose,
@@ -63,10 +71,20 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
   bool _isProcessingAnswer = false;
   Timer? _autoAdvanceTimer;
 
+  /// Timer ujian hitung mundur
+  Timer? _countdownTimer;
+  int _remainingSeconds = 0;
+  bool _isTimeUp = false;
+
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
+
+    if (widget.timeLimitMinutes != null && widget.timeLimitMinutes! > 0) {
+      _remainingSeconds = widget.timeLimitMinutes! * 60;
+      _startCountdown();
+    }
 
     // Acak posisi pilihan ganda agar jawaban benar tidak selalu di opsi pertama (A)
     final random = Random();
@@ -86,8 +104,43 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
     _selectedAnswers = List<int?>.filled(_shuffledQuestions.length, null);
   }
 
+  void _startCountdown() {
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_remainingSeconds > 1) {
+        setState(() {
+          _remainingSeconds--;
+        });
+      } else {
+        setState(() {
+          _remainingSeconds = 0;
+          _isTimeUp = true;
+        });
+        timer.cancel();
+        _onTimeExpired();
+      }
+    });
+  }
+
+  void _onTimeExpired() {
+    _autoAdvanceTimer?.cancel();
+    AudioService.instance.playWrongSound();
+    _showResultModal(isTimeUp: true);
+  }
+
+  String _formatRemainingTime() {
+    final m = (_remainingSeconds ~/ 60).toString().padLeft(2, '0');
+    final s = (_remainingSeconds % 60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
   @override
   void dispose() {
+    _countdownTimer?.cancel();
     _autoAdvanceTimer?.cancel();
     _pageController.dispose();
     super.dispose();
@@ -95,7 +148,7 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
 
   /// Dipanggil langsung ketika pengguna mengetuk salah satu opsi jawaban.
   void _onOptionSelected(int questionIndex, int selectedIndex) {
-    if (_isProcessingAnswer || _currentFeedback != null) return;
+    if (_isProcessingAnswer || _currentFeedback != null || _isTimeUp) return;
 
     final question = _shuffledQuestions[questionIndex];
     final isCorrect = selectedIndex == question.correctOptionIndex;
@@ -153,7 +206,8 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
     }
   }
 
-  void _showResultModal() {
+  void _showResultModal({bool isTimeUp = false}) {
+    _countdownTimer?.cancel();
     final unitTheme = UnitTheme.getTheme(widget.unitNumber);
     final total = _shuffledQuestions.length;
     final percent = (_correctCount / total * 100).round();
@@ -162,6 +216,33 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
     // Putar efek suara saat menyelesaikan level jika lulus
     if (passed) {
       AudioService.instance.playLevelCompleteSound();
+    } else {
+      AudioService.instance.playWrongSound();
+    }
+
+    String resultTitle;
+    if (isTimeUp) {
+      resultTitle = passed ? 'Waktu Habis, Kamu Lulus! 🎉' : 'Waktu Habis! ⏰';
+    } else if (widget.isExam) {
+      resultTitle = passed ? 'Ujian Lulus! 🎉' : 'Ujian Belum Lulus 💪';
+    } else {
+      resultTitle = passed ? 'Level Selesai! 🎉' : 'Coba Lagi! 💪';
+    }
+
+    // Hitung ringkasan waktu pengerjaan jika level ini memiliki batas waktu
+    String? timeSummary;
+    if (widget.timeLimitMinutes != null) {
+      if (isTimeUp) {
+        timeSummary = 'Batas waktu ${widget.timeLimitMinutes} menit telah berakhir';
+      } else {
+        final totalSecs = widget.timeLimitMinutes! * 60;
+        final spentSecs = totalSecs - _remainingSeconds;
+        final spentM = (spentSecs ~/ 60).toString().padLeft(2, '0');
+        final spentS = (spentSecs % 60).toString().padLeft(2, '0');
+        final remainM = (_remainingSeconds ~/ 60).toString().padLeft(2, '0');
+        final remainS = (_remainingSeconds % 60).toString().padLeft(2, '0');
+        timeSummary = 'Selesai: $spentM:$spentS (Sisa: $remainM:$remainS)';
+      }
     }
 
     showModalBottomSheet(
@@ -197,9 +278,11 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
                   ),
                 ),
                 child: Icon(
-                  passed
-                      ? Icons.emoji_events_rounded
-                      : Icons.refresh_rounded,
+                  isTimeUp && !passed
+                      ? Icons.alarm_off_rounded
+                      : (passed
+                          ? Icons.emoji_events_rounded
+                          : Icons.refresh_rounded),
                   size: 38,
                   color: passed ? unitTheme.primary : AppColors.heartRed,
                 ),
@@ -207,7 +290,8 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
               const SizedBox(height: 16),
 
               Text(
-                passed ? 'Level Selesai! 🎉' : 'Coba Lagi! 💪',
+                resultTitle,
+                textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
@@ -217,13 +301,61 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
               const SizedBox(height: 8),
 
               Text(
-                'Kamu menjawab $_correctCount dari $total soal dengan benar ($percent%)',
+                isTimeUp
+                    ? 'Waktu pengerjaan telah habis. Kamu berhasil menjawab $_correctCount dari $total soal dengan benar ($percent%).'
+                    : 'Kamu menjawab $_correctCount dari $total soal dengan benar ($percent%)',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
                   color: AppColors.outlineDark.withValues(alpha: 0.7),
                 ),
               ),
+
+              // Chip ringkasan waktu pengerjaan jika ujian
+              if (timeSummary != null) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isTimeUp && !passed
+                        ? const Color(0xFFFEE2E2)
+                        : const Color(0xFFE0F2FE),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isTimeUp && !passed
+                          ? const Color(0xFFDC2626)
+                          : const Color(0xFF0284C7),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isTimeUp && !passed
+                            ? Icons.alarm_off_rounded
+                            : Icons.timer_outlined,
+                        size: 15,
+                        color: isTimeUp && !passed
+                            ? const Color(0xFFDC2626)
+                            : const Color(0xFF0369A1),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        timeSummary,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: isTimeUp && !passed
+                              ? const Color(0xFF991B1B)
+                              : const Color(0xFF0369A1),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
               const SizedBox(height: 12),
 
               if (passed) ...[
@@ -273,8 +405,14 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
                         _correctCount = 0;
                         _currentFeedback = null;
                         _prevProgress = 0.0;
+                        _isTimeUp = false;
                         _selectedAnswers.fillRange(
                             0, _selectedAnswers.length, null);
+                        if (widget.timeLimitMinutes != null &&
+                            widget.timeLimitMinutes! > 0) {
+                          _remainingSeconds = widget.timeLimitMinutes! * 60;
+                          _startCountdown();
+                        }
                       });
                       _pageController.jumpToPage(0);
                     }
@@ -292,7 +430,9 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
                     ),
                   ),
                   child: Text(
-                    passed ? 'LANJUT' : 'ULANGI LEVEL',
+                    passed
+                        ? (widget.isExam ? 'SELESAIKAN UJIAN' : 'LANJUT')
+                        : (widget.isExam ? 'ULANGI UJIAN' : 'ULANGI LEVEL'),
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w900,
@@ -420,27 +560,91 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
           ),
         ),
 
-        // Stat badges row
+        // Stat badges row (Timer countdown jika ujian + Streak + Gems)
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisAlignment: widget.timeLimitMinutes != null
+                ? MainAxisAlignment.spaceBetween
+                : MainAxisAlignment.end,
             children: [
-              _StatBadge(
-                icon: Icons.local_fire_department_rounded,
-                iconColor: AppColors.streakOrange,
-                value: '${widget.streak}',
-              ),
-              const SizedBox(width: 8),
-              _StatBadge(
-                icon: Icons.diamond_rounded,
-                iconColor: AppColors.gemBlue,
-                value: '${widget.gems}',
+              if (widget.timeLimitMinutes != null)
+                _buildTimerBadge(),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _StatBadge(
+                    icon: Icons.local_fire_department_rounded,
+                    iconColor: AppColors.streakOrange,
+                    value: '${widget.streak}',
+                  ),
+                  const SizedBox(width: 8),
+                  _StatBadge(
+                    icon: Icons.diamond_rounded,
+                    iconColor: AppColors.gemBlue,
+                    value: '${widget.gems}',
+                  ),
+                ],
               ),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  /// Badge timer countdown untuk mode ujian (Checkpoint/Boss)
+  Widget _buildTimerBadge() {
+    final isLowTime = _remainingSeconds <= 120; // 2 menit terakhir (indikator darurat)
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: isLowTime ? const Color(0xFFFEE2E2) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isLowTime ? const Color(0xFFDC2626) : AppColors.outlineDark,
+          width: isLowTime ? 2 : 1.5,
+        ),
+        boxShadow: AppColors.solidShadow(offset: 2),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isLowTime ? Icons.alarm_rounded : Icons.timer_outlined,
+            size: 16,
+            color: isLowTime ? const Color(0xFFDC2626) : const Color(0xFF0284C7),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            _formatRemainingTime(),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              color: isLowTime ? const Color(0xFFDC2626) : AppColors.outlineDark,
+            ),
+          ),
+          if (widget.isExam) ...[
+            const SizedBox(width: 5),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              decoration: BoxDecoration(
+                color: isLowTime ? const Color(0xFFDC2626) : const Color(0xFF0284C7),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Text(
+                'UJIAN',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -724,22 +928,24 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen> {
           borderRadius: BorderRadius.circular(20),
           side: const BorderSide(color: AppColors.outlineDark, width: 2),
         ),
-        title: const Text(
-          'Keluar dari latihan?',
-          style: TextStyle(
+        title: Text(
+          widget.isExam ? 'Keluar dari ujian?' : 'Keluar dari latihan?',
+          style: const TextStyle(
             fontWeight: FontWeight.w900,
             color: AppColors.outlineDark,
           ),
         ),
-        content: const Text(
-          'Progresmu di level ini akan hilang.',
-          style: TextStyle(color: AppColors.textSecondary),
+        content: Text(
+          widget.isExam
+              ? 'Waktu ujian akan dihentikan dan progres jawabanmu di level ini akan direset.'
+              : 'Progresmu di level ini akan hilang.',
+          style: const TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child: Text(
-              'Lanjut Belajar',
+              widget.isExam ? 'Lanjut Ujian' : 'Lanjut Belajar',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: unitTheme.primary,

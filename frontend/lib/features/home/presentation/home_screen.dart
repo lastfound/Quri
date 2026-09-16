@@ -79,8 +79,22 @@ class _HomeScreenState extends State<HomeScreen> {
     final levels = Unit1Curriculum.levels;
     final List<Map<String, dynamic>> lessons = [];
 
-    // Pola zigzag offset untuk variasi visual
-    final offsets = [0.0, -100.0, 0.0, 100.0, 0.0, -100.0, 0.0, 100.0, 0.0, -100.0, 0.0, 100.0, 0.0];
+    // Pola offset zigzag: Checkpoint dan Boss selalu terpusat (0.0), materi normal meliuk lembut (-55.0 / 55.0)
+    const offsets = [
+      0.0,   // Level 1: Alif & Ba
+      -55.0, // Level 2: Ta & Tsa
+      55.0,  // Level 3: Jim, Ha, Kho
+      0.0,   // Level 4: Mini-Review & Checkpoint (CENTERED)
+      -55.0, // Level 5: Dal, Dzal, Ro, Zai
+      55.0,  // Level 6: Sin & Syin
+      -55.0, // Level 7: Sad & Dhod
+      0.0,   // Level 8: Mid-Unit Checkpoint (CENTERED)
+      55.0,  // Level 9: Tho, Zho, 'Ain, Ghoin
+      -55.0, // Level 10: Fa, Qof, Kaf
+      55.0,  // Level 11: Lam, Mim, Nun, Wawu
+      -55.0, // Level 12: Ha, Hamzah, Ya
+      0.0,   // Level 13: Boss Level Unit 1 (CENTERED)
+    ];
 
     for (int i = 0; i < levels.length; i++) {
       final level = levels[i];
@@ -96,12 +110,16 @@ class _HomeScreenState extends State<HomeScreen> {
       // Tentukan variant berdasarkan badge
       NodeVariant variant = NodeVariant.normal;
       if (level.badgeLabel != null) {
-        if (level.badgeLabel == 'BOSS LEVEL') {
+        if (level.isBoss) {
           variant = NodeVariant.treasure;
         } else {
           variant = NodeVariant.premium;
         }
       }
+
+      final offset = (i < offsets.length)
+          ? offsets[i]
+          : (level.isCheckpoint || level.isBoss ? 0.0 : ((i % 2 == 1) ? -55.0 : 55.0));
 
       lessons.add({
         'levelIndex': i,
@@ -109,16 +127,15 @@ class _HomeScreenState extends State<HomeScreen> {
         'arabic': level.arabicSubtitle,
         'status': status,
         'variant': variant,
-        'offset': offsets[i % offsets.length],
+        'offset': offset,
         'description': level.description,
         'xp': level.xpReward,
         'stars': _starsByLevel[i],
         'badgeLabel': level.badgeLabel,
-        if (level.badgeLabel != null) ...{
-          'sideNoteText': level.title,
-          'sideNoteAlign':
-              i.isEven ? SideNoteAlign.left : SideNoteAlign.right,
-        },
+        'timeLimitMinutes': level.effectiveTimeLimitMinutes,
+        'isExam': level.effectiveTimeLimitMinutes != null,
+        'isBoss': level.isBoss,
+        'isCheckpoint': level.isCheckpoint,
       });
     }
 
@@ -128,6 +145,9 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showLessonDialog(
       BuildContext context, Map<String, dynamic> lesson, UnitTheme unitTheme) {
     final isLocked = lesson['status'] == NodeStatus.locked;
+    final bool isExam = lesson['isExam'] == true;
+    final int? timeLimit = lesson['timeLimitMinutes'];
+    final bool isBoss = lesson['isBoss'] == true;
 
     showModalBottomSheet(
       context: context,
@@ -135,11 +155,11 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (ctx) {
         return Container(
           padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(28)),
-            border: const Border(
+                BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border(
               top: BorderSide(color: AppColors.outlineDark, width: 2),
             ),
           ),
@@ -155,6 +175,42 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 18),
+
+              // Badge tipe modul (Ujian vs Latihan)
+              if (isExam)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: isBoss ? const Color(0xFFFEF3C7) : const Color(0xFFE0F2FE),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isBoss ? const Color(0xFFB45309) : const Color(0xFF0284C7),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isBoss ? Icons.military_tech_rounded : Icons.timer_outlined,
+                        size: 15,
+                        color: isBoss ? const Color(0xFFB45309) : const Color(0xFF0369A1),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        isBoss ? 'UJIAN BOSS LEVEL' : 'UJIAN CHECKPOINT',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          color: isBoss ? const Color(0xFFB45309) : const Color(0xFF0369A1),
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
               Text(
                 lesson['arabic'],
                 textDirection: TextDirection.rtl,
@@ -185,7 +241,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: AppColors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
+
+              // Info XP dan Batas Waktu jika ujian
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -199,8 +257,52 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: AppColors.textPrimary,
                     ),
                   ),
+                  if (isExam && timeLimit != null) ...[
+                    const SizedBox(width: 16),
+                    const Icon(Icons.timer_outlined,
+                        color: Color(0xFF0284C7), size: 20),
+                    const SizedBox(width: 5),
+                    Text(
+                      'Waktu: $timeLimit Menit',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0369A1),
+                      ),
+                    ),
+                  ],
                 ],
               ),
+
+              // Banner peringatan ujian berwaktu
+              if (isExam && timeLimit != null && !isLocked) ...[
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFBEB),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFFBBF24), width: 1.5),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline_rounded,
+                          size: 18, color: Color(0xFFB45309)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Ujian ini memiliki batas waktu $timeLimit menit. Pastikan kamu siap sebelum mulai!',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF92400E),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
               if (isLocked) ...[
                 const SizedBox(height: 12),
                 Container(
@@ -240,7 +342,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           _navigateToExercise(lesson);
                         },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: unitTheme.primary,
+                    backgroundColor: isExam ? (isBoss ? AppColors.goldDark : unitTheme.primary) : unitTheme.primary,
                     disabledBackgroundColor: AppColors.lockedGray,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
@@ -253,14 +355,25 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-                  child: Text(
-                    isLocked ? '🔒 TERKUNCI' : 'MULAI BELAJAR',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      color: isLocked ? AppColors.lockedGrayBorder : Colors.white,
-                      letterSpacing: 1,
-                    ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (!isLocked && isExam) ...[
+                        const Icon(Icons.timer_outlined, color: Colors.white, size: 20),
+                        const SizedBox(width: 8),
+                      ],
+                      Text(
+                        isLocked
+                            ? '🔒 TERKUNCI'
+                            : (isExam ? 'MULAI UJIAN ($timeLimit MNT)' : 'MULAI BELAJAR'),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: isLocked ? AppColors.lockedGrayBorder : Colors.white,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -284,6 +397,8 @@ class _HomeScreenState extends State<HomeScreen> {
           levelTitle: level.title,
           unitNumber: 1,
           xpReward: level.xpReward,
+          timeLimitMinutes: level.effectiveTimeLimitMinutes,
+          isExam: level.effectiveTimeLimitMinutes != null,
           streak: 0,
           gems: 50,
           onCompleted: (correctCount, totalCount) {
@@ -623,6 +738,7 @@ class _HomeScreenState extends State<HomeScreen> {
               horizontalOffset: lesson['offset'],
               stars: lesson['stars'] ?? 0,
               badgeLabel: lesson['badgeLabel'],
+              timeLimitMinutes: lesson['timeLimitMinutes'],
               sideNoteText: lesson['sideNoteText'],
               sideNoteAlign: lesson['sideNoteAlign'] ?? SideNoteAlign.left,
               activeColor: unitTheme.primary,

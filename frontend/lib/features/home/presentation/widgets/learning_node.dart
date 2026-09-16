@@ -15,6 +15,7 @@ class LearningNode extends StatelessWidget {
   final double horizontalOffset;
   final int stars;
   final String? badgeLabel;
+  final int? timeLimitMinutes;
   final String? sideNoteText;
   final SideNoteAlign sideNoteAlign;
   final Color? activeColor;
@@ -30,12 +31,19 @@ class LearningNode extends StatelessWidget {
     this.horizontalOffset = 0.0,
     this.stars = 0,
     this.badgeLabel,
+    this.timeLimitMinutes,
     this.sideNoteText,
     this.sideNoteAlign = SideNoteAlign.left,
     this.activeColor,
     this.accentColor,
     required this.onTap,
   });
+
+  bool get _isBoss =>
+      badgeLabel?.toUpperCase().contains('BOSS') ?? false;
+
+  bool get _isCheckpoint =>
+      badgeLabel?.toUpperCase().contains('CHECKPOINT') ?? false;
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +53,13 @@ class LearningNode extends StatelessWidget {
     // Menentukan tampilan visual sesuai status dan varian node
     switch (status) {
       case NodeStatus.completed:
-        if (variant == NodeVariant.premium) {
+        if (_isBoss) {
+          baseColor = AppColors.goldPremium;
+          iconWidget = const Icon(Icons.emoji_events_rounded, size: 40, color: Colors.white);
+        } else if (_isCheckpoint) {
+          baseColor = activeColor ?? AppColors.teal;
+          iconWidget = const Icon(Icons.verified_rounded, size: 38, color: Colors.white);
+        } else if (variant == NodeVariant.premium) {
           baseColor = AppColors.goldPremium;
           iconWidget = const Icon(Icons.star_rounded, size: 38, color: Colors.white);
         } else {
@@ -55,7 +69,13 @@ class LearningNode extends StatelessWidget {
         break;
 
       case NodeStatus.active:
-        if (variant == NodeVariant.premium) {
+        if (_isBoss) {
+          baseColor = AppColors.goldDark;
+          iconWidget = const Icon(Icons.military_tech_rounded, size: 42, color: Colors.white);
+        } else if (_isCheckpoint) {
+          baseColor = activeColor ?? AppColors.teal;
+          iconWidget = const Icon(Icons.quiz_rounded, size: 38, color: Colors.white);
+        } else if (variant == NodeVariant.premium) {
           baseColor = AppColors.goldPremium;
           iconWidget = const Icon(Icons.auto_awesome_rounded, size: 36, color: Colors.white);
         } else {
@@ -66,7 +86,9 @@ class LearningNode extends StatelessWidget {
 
       case NodeStatus.locked:
         baseColor = AppColors.lockedGray;
-        if (variant == NodeVariant.treasure) {
+        if (_isBoss) {
+          iconWidget = const Icon(Icons.lock_clock_rounded, size: 34, color: AppColors.lockedGrayBorder);
+        } else if (variant == NodeVariant.treasure) {
           iconWidget = const Text('🎁', style: TextStyle(fontSize: 34));
         } else {
           iconWidget = const Icon(Icons.lock_rounded, size: 32, color: AppColors.lockedGrayBorder);
@@ -77,6 +99,14 @@ class LearningNode extends StatelessWidget {
     final bool isLocked = status == NodeStatus.locked;
     final bool isTreasure = variant == NodeVariant.treasure;
 
+    // Teks floating label saat node aktif
+    String activeLabelText = 'MULAI';
+    if (_isBoss) {
+      activeLabelText = 'MULAI BOSS';
+    } else if (_isCheckpoint) {
+      activeLabelText = 'MULAI UJIAN';
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
       child: Transform.translate(
@@ -85,80 +115,69 @@ class LearningNode extends StatelessWidget {
           alignment: Alignment.center,
           clipBehavior: Clip.none,
           children: [
-            // Konten Utama Node (Tombol, Bintang, Judul, Huruf Arab)
+            // Konten Utama Node (Tombol, Bintang, Badge Milestone, Judul, Huruf Arab)
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Floating Label jika status AKTIF ("MULAI")
+                // Floating Label jika status AKTIF ("MULAI" / "MULAI UJIAN")
                 if (status == NodeStatus.active)
                   Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                     decoration: BoxDecoration(
-                      color: variant == NodeVariant.premium
+                      color: _isBoss
                           ? AppColors.goldDark
-                          : (activeColor ?? AppColors.teal),
+                          : (_isCheckpoint
+                              ? (activeColor ?? AppColors.teal)
+                              : (variant == NodeVariant.premium
+                                  ? AppColors.goldDark
+                                  : (activeColor ?? AppColors.teal))),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: AppColors.outlineDark, width: 2),
                       boxShadow: AppColors.solidShadow(offset: 3),
                     ),
-                    child: const Text(
-                      'MULAI',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 11,
-                        letterSpacing: 1.2,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_isCheckpoint || _isBoss) ...[
+                          const Icon(Icons.timer_outlined, size: 13, color: Colors.white),
+                          const SizedBox(width: 4),
+                        ],
+                        Text(
+                          activeLabelText,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 11,
+                            letterSpacing: 1.1,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
 
                 // Tombol Node Tactile 3D
                 GestureDetector(
                   onTap: !isLocked ? onTap : null,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Container(
-                        width: 78,
-                        height: 78,
-                        decoration: BoxDecoration(
-                          shape: isTreasure ? BoxShape.rectangle : BoxShape.circle,
-                          borderRadius: isTreasure ? BorderRadius.circular(22) : null,
-                          color: baseColor,
-                          border: Border.all(color: AppColors.outlineDark, width: 2.5),
-                          boxShadow: AppColors.solidShadow(offset: 6),
-                        ),
-                        child: Center(child: iconWidget),
+                  child: Container(
+                    width: _isBoss ? 84 : 78,
+                    height: _isBoss ? 84 : 78,
+                    decoration: BoxDecoration(
+                      shape: isTreasure ? BoxShape.rectangle : BoxShape.circle,
+                      borderRadius: isTreasure ? BorderRadius.circular(22) : null,
+                      color: baseColor,
+                      border: Border.all(
+                        color: _isBoss ? const Color(0xFF78350F) : AppColors.outlineDark,
+                        width: _isBoss ? 3 : 2.5,
                       ),
-
-                      // Badge Label (PREMIUM / BONUS) di pojok atas node
-                      if (badgeLabel != null)
-                        Positioned(
-                          top: -8,
-                          right: -10,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: badgeLabel == 'PREMIUM'
-                                  ? AppColors.gold
-                                  : (accentColor ?? AppColors.mint),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: AppColors.outlineDark, width: 1.5),
-                              boxShadow: AppColors.solidShadow(offset: 2),
-                            ),
-                            child: Text(
-                              badgeLabel!,
-                              style: const TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w900,
-                                color: AppColors.outlineDark,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
+                      boxShadow: AppColors.solidShadow(
+                        offset: 6,
+                        color: _isBoss
+                            ? const Color(0xFF78350F).withValues(alpha: 0.5)
+                            : AppColors.outlineDark.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Center(child: iconWidget),
                   ),
                 ),
 
@@ -183,9 +202,68 @@ class LearningNode extends StatelessWidget {
                     ),
                   ),
 
+                // Badge Milestone / Ujian yang rapi (tidak menabrak tombol)
+                if (badgeLabel != null)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
+                    decoration: BoxDecoration(
+                      color: _isBoss
+                          ? const Color(0xFFFEF3C7)
+                          : (_isCheckpoint
+                              ? const Color(0xFFE0F2FE)
+                              : (accentColor ?? AppColors.mint)),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _isBoss
+                            ? const Color(0xFFB45309)
+                            : (_isCheckpoint
+                                ? const Color(0xFF0284C7)
+                                : AppColors.outlineDark),
+                        width: 1.5,
+                      ),
+                      boxShadow: AppColors.solidShadow(offset: 2),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _isBoss
+                              ? Icons.military_tech_rounded
+                              : (_isCheckpoint
+                                  ? Icons.timer_outlined
+                                  : Icons.star_rounded),
+                          size: 13,
+                          color: _isBoss
+                              ? const Color(0xFFB45309)
+                              : (_isCheckpoint
+                                  ? const Color(0xFF0369A1)
+                                  : AppColors.outlineDark),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          timeLimitMinutes != null
+                              ? '$badgeLabel • $timeLimitMinutes MNT'
+                              : badgeLabel!,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            color: _isBoss
+                                ? const Color(0xFFB45309)
+                                : (_isCheckpoint
+                                    ? const Color(0xFF0369A1)
+                                    : AppColors.outlineDark),
+                            letterSpacing: 0.6,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
                 // Label Judul Modul
                 Text(
                   title,
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
@@ -199,13 +277,13 @@ class LearningNode extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: isLocked ? AppColors.grayMedium : AppColors.teal,
+                    color: isLocked ? AppColors.grayMedium : (activeColor ?? AppColors.teal),
                   ),
                 ),
               ],
             ),
 
-            // Side Note Card (Side Quest Callout / Info Spesial)
+            // Side Note Card (Side Quest Callout / Info Tambahan jika ada)
             if (sideNoteText != null)
               Positioned(
                 left: sideNoteAlign == SideNoteAlign.left ? -165 : 95,

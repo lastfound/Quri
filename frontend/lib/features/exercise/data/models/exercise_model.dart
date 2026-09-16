@@ -26,6 +26,7 @@ class ExerciseLevel {
   final List<ExerciseQuestion> questions;
   final int xpReward;
   final String? badgeLabel;
+  final int? timeLimitMinutes;
 
   const ExerciseLevel({
     required this.levelNumber,
@@ -35,5 +36,23 @@ class ExerciseLevel {
     required this.questions,
     this.xpReward = 20,
     this.badgeLabel,
+    this.timeLimitMinutes,
   });
+
+  /// Menentukan apakah level ini merupakan Boss Level
+  bool get isBoss =>
+      badgeLabel?.toUpperCase().contains('BOSS') ?? false;
+
+  /// Menentukan apakah level ini merupakan Checkpoint (Mini atau Mid)
+  bool get isCheckpoint =>
+      badgeLabel?.toUpperCase().contains('CHECKPOINT') ?? false;
+
+  /// Batas waktu efektif dalam menit:
+  /// Checkpoint = 15 menit, Boss = 17 menit, selain itu null (latihan biasa)
+  int? get effectiveTimeLimitMinutes {
+    if (timeLimitMinutes != null) return timeLimitMinutes;
+    if (isBoss) return 17;
+    if (isCheckpoint) return 15;
+    return null;
+  }
 }
